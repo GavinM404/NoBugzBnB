@@ -7,15 +7,15 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       User.hasMany(
         models.Spot,
-        {foreignKey: 'ownerId', onDelete: CASCADE, hooks: true }
+        {foreignKey: 'ownerId', onDelete: 'CASCADE', hooks: true }
       );
       User.hasMany(
         models.Booking,
-        {foreignKey: 'userId', onDelete: CASCADE, hooks: true }
+        {foreignKey: 'userId', onDelete: 'CASCADE', hooks: true }
       );
       User.hasMany(
-        models.Reviews,
-        {foreignKey: 'userId', onDelete: CASCADE, hooks: true }
+        models.Review,
+        {foreignKey: 'userId', onDelete: 'CASCADE', hooks: true }
       );
     }
   };
