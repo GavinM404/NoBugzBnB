@@ -1,25 +1,36 @@
 'use strict';
 
+const SpotImage = require('../models');
+
+let options = {};
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    /**
-     * Add seed commands here.
-     *
-     * Example:
-     * await queryInterface.bulkInsert('People', [{
-     *   name: 'John Doe',
-     *   isBetaMember: false
-     * }], {});
-    */
+    await SpotImage.bulkcreate([
+      {
+        spotId: 1,
+        url: 'coolsite.come/img',
+        preview: true,
+      },
+      {
+        spotId: 2,
+        url: 'coolsite.come/img1',
+        preview: false,
+      },
+      {
+        spotId: 2,
+        url: 'coolsite.come/img3',
+        preview: true,
+      }
+    ],{ validate: true })
   },
 
   async down (queryInterface, Sequelize) {
-    /**
-     * Add commands to revert seed here.
-     *
-     * Example:
-     * await queryInterface.bulkDelete('People', null, {});
-     */
+    options.tableName = 'SpotImages';
+    const Op = Sequelize.Op;
+    return queryInterface.bulkDelete(options, {
+      spotId: { [Op.in]: [1, 2, 3] }
+    }, {});
   }
 };
