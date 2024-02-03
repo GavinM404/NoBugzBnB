@@ -92,7 +92,7 @@ router.get("/", validateGet, async (req, res) => {
         "createdAt",
         "updatedAt",
         [
-          sequelize.literal('(SELECT AVG(stars) FROM Reviews WHERE Reviews.spotId = Spot.id)'),
+          sequelize.literal('(SELECT AVG(stars) FROM `Reviews` WHERE `Reviews`.`spotId` = `Spot`.`id`)'),
           'avgRating',
         ],
       ],
@@ -110,7 +110,7 @@ router.get("/", validateGet, async (req, res) => {
           required: false,
         },
       ],
-      group: ["Spots.id", "SpotImages.id"],
+      group: ["Spot.id", "SpotImages.id"],
       offset: (parseInt(page) - 1) * parseInt(size),
       limit: parseInt(size),
       subQuery: false,
