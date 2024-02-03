@@ -12,7 +12,6 @@ const {
   SpotImage,
   User,
   ReviewImage,
-  Booking,
   sequelize,
 } = require("../../db/models");
 const { Op } = require("sequelize");
@@ -20,7 +19,7 @@ const { handleValidationErrors } = require("../../utils/validation");
 
 const router = express.Router();
 
-router.delete('/review-images/:imageId', requireAuth, async (req, res) => {
+router.delete('/:imageId', requireAuth, async (req, res) => {
     const userId = req.user.id;
     const imageId = req.params.imageId;
 
