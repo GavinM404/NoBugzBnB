@@ -110,9 +110,10 @@ router.get("/", validateGet, async (req, res) => {
           required: false,
         },
       ],
-      group: ["Spots.id"],
+      group: ["Spots.id", "SpotImages.id"],
       offset: (parseInt(page) - 1) * parseInt(size),
       limit: parseInt(size),
+      subQuery: false,
     });
 
     const prettiedResponse = {
