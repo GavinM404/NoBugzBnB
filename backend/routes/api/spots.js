@@ -211,7 +211,7 @@ router.get("/current", requireAuth, async (req, res) => {
       "createdAt",
       "updatedAt",
       [
-        Spot.sequelize.fn("AVG", Spot.sequelize.col("Reviews.stars")),
+        sequelize.fn("AVG", sequelize.col("Reviews.stars")),
         "avgRating",
       ],
     ],
@@ -229,7 +229,7 @@ router.get("/current", requireAuth, async (req, res) => {
         required: false,
       },
     ],
-    group: ["Spots.id", 'SpotImages.id'],
+    group: ["Spot.id", 'SpotImages.id'],
   });
 
   const prettiedResponse = {
