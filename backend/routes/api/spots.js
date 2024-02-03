@@ -6,7 +6,14 @@ const {
   restoreUser,
   requireAuth,
 } = require("../../utils/auth");
-const { Spot, Review, SpotImage, User, ReviewImage, sequelize } = require("../../db/models");
+const {
+  Spot,
+  Review,
+  SpotImage,
+  User,
+  ReviewImage,
+  sequelize,
+} = require("../../db/models");
 
 const { handleValidationErrors } = require("../../utils/validation");
 
@@ -26,9 +33,12 @@ const validateSpot = [
   handleValidationErrors,
 ];
 
-const validateReview =[
-  check('review').notEmpty().withMessage("Review text is required"),
-  check('stars').notEmpty().isInt({min: 1, max: 5}).withMessage("Stars must be an integer from 1 to 5"),
+const validateReview = [
+  check("review").notEmpty().withMessage("Review text is required"),
+  check("stars")
+    .notEmpty()
+    .isInt({ min: 1, max: 5 })
+    .withMessage("Stars must be an integer from 1 to 5"),
   handleValidationErrors,
 ];
 
@@ -314,21 +324,21 @@ router.delete("/:spotId", requireAuth, async (res, req) => {
     res.status(404);
     const responseObj = { message: "Spot couldn't be found" };
     return res.json(responseObj);
-  };
+  }
 
   if (spot.ownerId !== parseInt(req.user.id, 10)) {
     res.status(403);
     const responseObj = { message: "Forbidden" };
     return res.json(responseObj);
-  };
+  }
 
   await spot.destroy();
 
-  return res.json({message: 'Successfully deleted'});
+  return res.json({ message: "Successfully deleted" });
 });
 
 //get all reviews by a spotId
-router.get('/:spotId/reviews', async(res, req) => {
+router.get("/:spotId/reviews", async (req, res) => {
   const spotId = req.params.spotId;
   const spot = await Spot.findByPk(spotId);
 
@@ -336,59 +346,68 @@ router.get('/:spotId/reviews', async(res, req) => {
     res.status(404);
     const responseObj = { message: "Spot couldn't be found" };
     return res.json(responseObj);
-  };
+  }
 
   const reviews = await Review.findAll({
-    where:{
-      spotId: spotId
+    where: {
+      spotId: spotId,
     },
-    include:[
+    include: [
       {
-      model: User,
-      attributes: ['id', 'firstName', 'lastName']
-    },
-    {
-      model: ReviewImage,
-      attributes: ['id', 'url']
-    }
-  ]
+        model: User,
+        attributes: ["id", "firstName", "lastName"],
+      },
+      {
+        model: ReviewImage,
+        attributes: ["id", "url"],
+      },
+    ],
   });
 
-  return res.json({Reviews: reviews})
+  return res.json({ Reviews: reviews });
 });
 
 //create a review for a spot based on the spotId
-router.post('/:spotId/reviews', requireAuth, validateReview, async(req, res) => {
-  const spotId = parseInt(req.params.spotId, 10);
-  const userId = req.user.id
+router.post(
+  "/:spotId/reviews",
+  requireAuth,
+  validateReview,
+  async (req, res) => {
+    const spotId = parseInt(req.params.spotId, 10);
+    const userId = req.user.id;
 
-  const spot = await Spot.findByPk(spotId);
+    const spot = await Spot.findByPk(spotId);
 
-  if (!spot) {
-    res.status(404);
-    const responseObj = { message: "Spot couldn't be found" };
-    return res.json(responseObj);
-  };
-
-  const userReviewCheck = await Review.findOne({
-    where: {
-      spotId: spotId,
-      userId: userId
+    if (!spot) {
+      res.status(404);
+      const responseObj = { message: "Spot couldn't be found" };
+      return res.json(responseObj);
     }
-  })
 
-  if (userReviewCheck){
-    res.status(500);
-    const responseObj = { message: "User already has a review for this spot" };
-    return res.json(responseObj);
+    const userReviewCheck = await Review.findOne({
+      where: {
+        spotId: spotId,
+        userId: userId,
+      },
+    });
+
+    if (userReviewCheck) {
+      res.status(500);
+      const responseObj = {
+        message: "User already has a review for this spot",
+      };
+      return res.json(responseObj);
+    }
+
+    const newReview = await Review.create({
+      spotId: spotId,
+      userId: userId,
+      ...req.body,
+    });
+
+    return res.json(newReview);
   }
-
-  const newReview = await Review.create({
-    spotId: spotId,
-    userId: userId,
-    ...req.body
-  })
-});
+);
 /*
 //get all bookings for a spot based the spotId
 router.get()
