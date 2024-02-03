@@ -168,7 +168,7 @@ router.put("/:reviewId", requireAuth, validateReview, async (req, res) => {
 });
 
 //delete review
-router.delete("/:reviewId", requireAuth, async (res, req) => {
+router.delete("/:reviewId", requireAuth, async (req, res) => {
     let review = await Review.findByPk(req.params.reviewId);
 
     if (!review) {

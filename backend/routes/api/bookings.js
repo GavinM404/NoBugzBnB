@@ -174,8 +174,9 @@ if (booking.ownerId !== parseInt(userId, 10)) {
   return res.json(booking);
 });
 
-router.delete("/:bookingId", requireAuth, async (reg, res, next) => {
+router.delete("/:bookingId", requireAuth, async (req, res, next) => {
   const bookingId = req.params.bookingId;
+  const userId = req.user.id;
 
   const booking = await Booking.findByPk(bookingId);
 
@@ -184,6 +185,13 @@ router.delete("/:bookingId", requireAuth, async (reg, res, next) => {
     const responseObj = { message: "Booking couldn't be found" };
     return res.json(responseObj);
   }
+
+  if (booking.ownerId !== parseInt(userId, 10)) {
+    res.status(403);
+    const responseObj = { message: "Forbidden" };
+    return res.json(responseObj);
+  }
+
 
   if (booking.startDate < new Date()) {
     res.status(403);
