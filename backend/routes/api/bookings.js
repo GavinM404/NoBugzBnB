@@ -97,12 +97,12 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
 
   const booking = await Booking.findByPk(bookingId);
 
-  /*    if (booking.ownerId !== parseInt(req.user.id, 10)) {
+if (booking.ownerId !== parseInt(req.user.id, 10)) {
         res.status(403);
         const responseObj = { message: "Forbidden" };
         return res.json(responseObj);
       }
-*/
+
 
   if (startDate >= endDate) {
     errArr.push({

@@ -19,7 +19,7 @@ const {
 const { handleValidationErrors } = require("../../utils/validation");
 const router = express.Router();
 
-router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
+router.delete('/spot-images/:imageId', requireAuth, async (req, res, next) => {
     const userId = req.user.id;
     const imageId = req.params.imageId;
 
