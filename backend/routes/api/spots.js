@@ -91,9 +91,13 @@ router.get("/", validateGet, async (req, res) => {
         "price",
         "createdAt",
         "updatedAt",
-        [
+       /* [
           sequelize.literal('(SELECT AVG(stars) FROM "Reviews" WHERE "Reviews"."spotId" = "Spot"."id")'),
           'avgRating',
+        ], */
+        [
+          sequelize.fn("AVG", sequelize.col("Reviews.stars")),
+          "avgRating",
         ],
       ],
       include: [
