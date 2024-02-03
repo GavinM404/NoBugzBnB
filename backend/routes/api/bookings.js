@@ -103,7 +103,7 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
     return res.json(responseObj);
   }
 
-if (booking.ownerId !== parseInt(userId, 10)) {
+if (booking.userId !== parseInt(userId, 10)) {
         res.status(403);
         const responseObj = { message: "Forbidden" };
         return res.json(responseObj);
