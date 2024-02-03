@@ -523,7 +523,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
     return;
   }
 
-  const bookingExists = await Booking.findOne({
+  const existingBooking = await Booking.findOne({
     where: {
       spotId: spotId,
       [Op.or]: [
@@ -537,16 +537,22 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
             [Op.between]: [startDate, endDate],
           },
         },
+        {
+          [Op.and]: [
+            { startDate: { [Op.lte]: startDate } },
+            { endDate: { [Op.gte]: endDate } },
+          ],
+        },
       ],
     },
   });
 
-  if (bookingExists) {
+  if (existingBooking) {
     res.status(403);
     const responseObj = {
       message: "Booking already exists for the specified dates",
     };
-    return;
+    return res.json(responseObj);
   }
 
   const spot = await Spot.findByPk(spotId);
