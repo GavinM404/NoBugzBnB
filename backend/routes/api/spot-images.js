@@ -29,9 +29,9 @@ router.delete('/spot-images/:imageId', requireAuth, async (req, res, next) => {
         },
         include: {
             model: Spot,
-            where: {
+           /* where: {
                 ownerId: userId,
-            },
+            }, */
         },
     });
 
