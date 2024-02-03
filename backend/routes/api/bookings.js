@@ -97,7 +97,13 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
 
   const booking = await Booking.findByPk(bookingId);
 
-if (booking.ownerId !== parseInt(req.user.id, 10)) {
+  if (!booking) {
+    res.status(404);
+    const responseObj = { message: "Booking couldn't be found" };
+    return res.json(responseObj);
+  }
+
+if (booking.ownerId !== parseInt(userId, 10)) {
         res.status(403);
         const responseObj = { message: "Forbidden" };
         return res.json(responseObj);
@@ -126,12 +132,6 @@ if (booking.ownerId !== parseInt(req.user.id, 10)) {
       ),
     });
     return;
-  }
-
-  if (!booking) {
-    res.status(404);
-    const responseObj = { message: "Booking couldn't be found" };
-    return res.json(responseObj);
   }
 
   const bookingExists = await Booking.findOne({

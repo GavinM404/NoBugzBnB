@@ -29,9 +29,6 @@ router.delete('/:imageId', requireAuth, async (req, res) => {
         },
         include: {
             model: Review,
-            where: {
-                userId: userId,
-            },
         },
     });
 
@@ -40,6 +37,13 @@ router.delete('/:imageId', requireAuth, async (req, res) => {
         const responseObj = { message: "Review Image couldn't be found" };
         return res.json(responseObj);
       }
+
+      if (reviewImage.Review.userId!== parseInt(userId, 10)) {
+        res.status(403);
+        const responseObj = { message: "Forbidden" };
+        return res.json(responseObj);
+      }
+
 
       await reviewImage.destroy();
 
