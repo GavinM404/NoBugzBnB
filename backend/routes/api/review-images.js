@@ -20,29 +20,29 @@ const { handleValidationErrors } = require("../../utils/validation");
 
 const router = express.Router();
 
-router.delete('/spot-images/:imageId', requireAuth, async (req, res) => {
+router.delete('/review-images/:imageId', requireAuth, async (req, res) => {
     const userId = req.user.id;
     const imageId = req.params.imageId;
 
-    const spotImage = await SpotImage.findOne({
+    const reviewImage = await ReviewImage.findOne({
         where: {
             id: imageId,
         },
         include: {
-            model: Spot,
+            model: Review,
             where: {
-                ownerId: userId,
+                userId: userId,
             },
         },
     });
 
-    if (!spotImage) {
+    if (!reviewImage) {
         res.status(404);
-        const responseObj = { message: "Spot Image couldn't be found" };
+        const responseObj = { message: "Review Image couldn't be found" };
         return res.json(responseObj);
       }
 
-      await spotImage.destroy();
+      await reviewImage.destroy();
 
       return res.json({ message: "Successfully deleted" });
 })
