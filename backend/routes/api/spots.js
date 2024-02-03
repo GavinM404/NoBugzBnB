@@ -224,7 +224,7 @@ router.get("/current", requireAuth, async (req, res) => {
         required: false,
       },
     ],
-    group: ["Spot.id"],
+    group: ["Spot.id", 'SpotImage.id'],
   });
 
   const prettiedResponse = {
