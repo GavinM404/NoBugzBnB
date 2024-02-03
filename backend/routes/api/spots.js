@@ -110,7 +110,7 @@ router.get("/", validateGet, async (req, res) => {
           required: false,
         },
       ],
-      group: ["Spot.id"],
+      group: ["Spots.id"],
       offset: (parseInt(page) - 1) * parseInt(size),
       limit: parseInt(size),
     });
@@ -224,7 +224,7 @@ router.get("/current", requireAuth, async (req, res) => {
         required: false,
       },
     ],
-    group: ["Spot.id", 'SpotImage.id'],
+    group: ["Spots.id", 'SpotImages.id'],
   });
 
   const prettiedResponse = {
