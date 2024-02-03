@@ -186,7 +186,7 @@ router.post("/:spotId/images", requireAuth, async (req, res, next) => {
     url: newImg.url,
     preview: newImg.preview,
   };
-  return res.status(201).json(prettiedResponse);
+  return res.status(200).json(prettiedResponse);
 });
 
 //get all spots owned by current user
@@ -541,7 +541,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
     },
   });
 
-  if (existingBooking) {
+  if (bookingExists) {
     res.status(403);
     const responseObj = {
       message: "Booking already exists for the specified dates",
