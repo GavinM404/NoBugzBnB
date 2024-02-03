@@ -1,18 +1,18 @@
 const express = require("express");
-const { check, Result } = require("express-validator");
+const { check } = require("express-validator");
 
 const {
   setTokenCookie,
   restoreUser,
   requireAuth,
 } = require("../../utils/auth");
-const { Spot, Review, SpotImage, User, sequelize } = require("../../db/models");
+const { Spot, Review, SpotImage, User, ReviewImage, sequelize } = require("../../db/models");
 
 const { handleValidationErrors } = require("../../utils/validation");
 
 const router = express.Router();
 
-//Spot Validations
+//Validations
 const validateSpot = [
   check("address").notEmpty().withMessage("Address is required"),
   check("city").notEmpty().withMessage("City is required"),
@@ -23,6 +23,12 @@ const validateSpot = [
   check("name").notEmpty().withMessage("Name is required"),
   check("description").notEmpty().withMessage("Description is required"),
   check("price").notEmpty().withMessage("Price is required"),
+  handleValidationErrors,
+];
+
+const validateReview =[
+  check('review').notEmpty().withMessage("Review text is required"),
+  check('stars').notEmpty().isInt({min: 1, max: 5}).withMessage("Stars must be an integer from 1 to 5"),
   handleValidationErrors,
 ];
 
@@ -87,7 +93,7 @@ router.get("/", async (req, res) => {
       })),
     };
 
-    res.json(prettiedResponse); //this is wrong
+    res.json(prettiedResponse);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Something broke bad!" });
@@ -306,7 +312,6 @@ router.delete("/:spotId", requireAuth, async (res, req) => {
 
   if (!spot) {
     res.status(404);
-    //return a message with the error
     const responseObj = { message: "Spot couldn't be found" };
     return res.json(responseObj);
   };
@@ -321,13 +326,70 @@ router.delete("/:spotId", requireAuth, async (res, req) => {
 
   return res.json({message: 'Successfully deleted'});
 });
-/*
+
 //get all reviews by a spotId
-router.get();
+router.get('/:spotId/reviews', async(res, req) => {
+  const spotId = req.params.spotId;
+  const spot = await Spot.findByPk(spotId);
+
+  if (!spot) {
+    res.status(404);
+    const responseObj = { message: "Spot couldn't be found" };
+    return res.json(responseObj);
+  };
+
+  const reviews = await Review.findAll({
+    where:{
+      spotId: spotId
+    },
+    include:[
+      {
+      model: User,
+      attributes: ['id', 'firstName', 'lastName']
+    },
+    {
+      model: ReviewImage,
+      attributes: ['id', 'url']
+    }
+  ]
+  });
+
+  return res.json({Reviews: reviews})
+});
 
 //create a review for a spot based on the spotId
-router.post();
+router.post('/:spotId/reviews', requireAuth, validateReview, async(req, res) => {
+  const spotId = parseInt(req.params.spotId, 10);
+  const userId = req.user.id
 
+  const spot = await Spot.findByPk(spotId);
+
+  if (!spot) {
+    res.status(404);
+    const responseObj = { message: "Spot couldn't be found" };
+    return res.json(responseObj);
+  };
+
+  const userReviewCheck = await Review.findOne({
+    where: {
+      spotId: spotId,
+      userId: userId
+    }
+  })
+
+  if (userReviewCheck){
+    res.status(500);
+    const responseObj = { message: "User already has a review for this spot" };
+    return res.json(responseObj);
+  }
+
+  const newReview = await Review.create({
+    spotId: spotId,
+    userId: userId,
+    ...req.body
+  })
+});
+/*
 //get all bookings for a spot based the spotId
 router.get()
 
