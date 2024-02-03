@@ -17,7 +17,7 @@ const {
 } = require("../../db/models");
 
 const { handleValidationErrors } = require("../../utils/validation");
-
+const { Op } = require("sequelize");
 const router = express.Router();
 
 router.get("/current", requireAuth, async (req, res, next) => {

@@ -14,7 +14,7 @@ const {
   ReviewImage,
   sequelize,
 } = require("../../db/models");
-
+const { Op } = require("sequelize");
 const { handleValidationErrors } = require("../../utils/validation");
 
 const router = express.Router();

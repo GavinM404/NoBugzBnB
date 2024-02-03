@@ -1,5 +1,6 @@
 const express = require("express");
 const { check } = require("express-validator");
+const { Op } = require("sequelize");
 
 const {
   setTokenCookie,
@@ -22,31 +23,60 @@ const router = express.Router();
 
 //Validations
 const validateSpot = [
-  check("address").notEmpty().withMessage("Address is required"),
-  check("city").notEmpty().withMessage("City is required"),
-  check("state").notEmpty().withMessage("State is required"),
-  check("country").notEmpty().withMessage("Country is required"),
-  check("lat").notEmpty().withMessage("Lat is required"),
-  check("lng").notEmpty().withMessage("Lng is required"),
-  check("name").notEmpty().withMessage("Name is required"),
-  check("description").notEmpty().withMessage("Description is required"),
-  check("price").notEmpty().withMessage("Price is required"),
+  check('address').notEmpty().withMessage('Address is required'),
+  check('city').notEmpty().withMessage('City is required'),
+  check('state').notEmpty().withMessage('State is required'),
+  check('country').notEmpty().withMessage('Country is required'),
+  check('lat').notEmpty().withMessage('Lat is required'),
+  check('lng').notEmpty().withMessage('Lng is required'),
+  check('name').notEmpty().withMessage('Name is required'),
+  check('description').notEmpty().withMessage('Description is required'),
+  check('price').notEmpty().withMessage('Price is required'),
   handleValidationErrors,
 ];
 
 const validateReview = [
-  check("review").notEmpty().withMessage("Review text is required"),
-  check("stars")
+  check('review').notEmpty().withMessage('Review text is required'),
+  check('stars')
     .notEmpty()
     .isInt({ min: 1, max: 5 })
-    .withMessage("Stars must be an integer from 1 to 5"),
+    .withMessage('Stars must be an integer from 1 to 5'),
+  handleValidationErrors,
+];
+
+const validateGet = [
+  check('page').default(1).isInt({min: 1, max: 10}).withMessage('Page must be greater than or equal to 1'),
+  check('size').default(1).isInt({min: 1, max: 20}).withMessage('Size must be greater than or equal to 1'),
+  check('maxLat').optional().isFloat().withMessage('Maximum latitude is invalid'),
+  check('minLat').optional().isFloat().withMessage('Minimum latitude is invalid'),
+  check('maxLng').optional().isFloat().withMessage('Maximum longitude is invalid'),
+  check('minLng').optional().isFloat().withMessage('Minimum longitude is invalid'),
+  check('minPrice').optional().isFloat({min:0}).withMessage('Minimum price must be greater than or equal to 0'),
+  check('maxPrice').optional().isFloat({min:0}).withMessage('Maximum price must be greater than or equal to 0'),
   handleValidationErrors,
 ];
 
 //Get all spots
-router.get("/", async (req, res) => {
+router.get("/", validateGet, async (req, res) => {
   try {
+    const { page = 1, size = 20, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
+
+    const filterOps = {
+      where: {
+        lat: {
+          [Op.between]: [minLat || -90, maxLat || 90],
+        },
+        lng: {
+          [Op.between]: [minLng || -180, maxLng || 180],
+        },
+        price: {
+          [Op.between]: [minPrice || 0, maxPrice || 999999],
+        },
+      },
+    };
+
     const spots = await Spot.findAll({
+      ...filterOps,
       attributes: [
         "id",
         "ownerId",
@@ -62,8 +92,8 @@ router.get("/", async (req, res) => {
         "createdAt",
         "updatedAt",
         [
-          Spot.sequelize.fn("AVG", Spot.sequelize.col("Reviews.stars")),
-          "avgRating",
+          sequelize.literal('(SELECT AVG(stars) FROM Reviews WHERE Reviews.spotId = Spot.id)'),
+          'avgRating',
         ],
       ],
       include: [
@@ -81,6 +111,8 @@ router.get("/", async (req, res) => {
         },
       ],
       group: ["Spot.id"],
+      offset: (parseInt(page) - 1) * parseInt(size),
+      limit: parseInt(size),
     });
 
     const prettiedResponse = {
@@ -98,10 +130,12 @@ router.get("/", async (req, res) => {
         price: spot.price,
         createdAt: spot.createdAt,
         updatedAt: spot.updatedAt,
-        avgRating: spot.getDataValue("avgRating"),
+        avgRating: spot.dataValues.avgRating,
         previewImage:
           spot.SpotImages.length > 0 ? spot.SpotImages[0].url : null,
       })),
+      page: parseInt(page, 10),
+      size: parseInt(size, 10),
     };
 
     res.json(prettiedResponse);
@@ -111,7 +145,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-//we need to validate whether the user is logged in
 
 //Create a spot
 router.post("/", requireAuth, validateSpot, async (req, res, next) => {
