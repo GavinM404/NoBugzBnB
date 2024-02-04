@@ -23,43 +23,76 @@ const router = express.Router();
 
 //Validations
 const validateSpot = [
-  check('address').notEmpty().withMessage('Address is required'),
-  check('city').notEmpty().withMessage('City is required'),
-  check('state').notEmpty().withMessage('State is required'),
-  check('country').notEmpty().withMessage('Country is required'),
-  check('lat').notEmpty().withMessage('Lat is required'),
-  check('lng').notEmpty().withMessage('Lng is required'),
-  check('name').notEmpty().withMessage('Name is required'),
-  check('description').notEmpty().withMessage('Description is required'),
-  check('price').notEmpty().withMessage('Price is required'),
+  check("address").notEmpty().withMessage("Address is required"),
+  check("city").notEmpty().withMessage("City is required"),
+  check("state").notEmpty().withMessage("State is required"),
+  check("country").notEmpty().withMessage("Country is required"),
+  check("lat").notEmpty().withMessage("Lat is required"),
+  check("lng").notEmpty().withMessage("Lng is required"),
+  check("name").notEmpty().withMessage("Name is required"),
+  check("description").notEmpty().withMessage("Description is required"),
+  check("price").notEmpty().withMessage("Price is required"),
   handleValidationErrors,
 ];
 
 const validateReview = [
-  check('review').notEmpty().withMessage('Review text is required'),
-  check('stars')
+  check("review").notEmpty().withMessage("Review text is required"),
+  check("stars")
     .notEmpty()
     .isInt({ min: 1, max: 5 })
-    .withMessage('Stars must be an integer from 1 to 5'),
+    .withMessage("Stars must be an integer from 1 to 5"),
   handleValidationErrors,
 ];
 
 const validateGet = [
-  check('page').default(1).isInt({min: 1, max: 10}).withMessage('Page must be greater than or equal to 1'),
-  check('size').default(1).isInt({min: 1, max: 20}).withMessage('Size must be greater than or equal to 1'),
-  check('maxLat').optional().isFloat().withMessage('Maximum latitude is invalid'),
-  check('minLat').optional().isFloat().withMessage('Minimum latitude is invalid'),
-  check('maxLng').optional().isFloat().withMessage('Maximum longitude is invalid'),
-  check('minLng').optional().isFloat().withMessage('Minimum longitude is invalid'),
-  check('minPrice').optional().isFloat({min:0}).withMessage('Minimum price must be greater than or equal to 0'),
-  check('maxPrice').optional().isFloat({min:0}).withMessage('Maximum price must be greater than or equal to 0'),
+  check("page")
+    .default(1)
+    .isInt({ min: 1, max: 10 })
+    .withMessage("Page must be greater than or equal to 1"),
+  check("size")
+    .default(1)
+    .isInt({ min: 1, max: 20 })
+    .withMessage("Size must be greater than or equal to 1"),
+  check("maxLat")
+    .optional()
+    .isFloat()
+    .withMessage("Maximum latitude is invalid"),
+  check("minLat")
+    .optional()
+    .isFloat()
+    .withMessage("Minimum latitude is invalid"),
+  check("maxLng")
+    .optional()
+    .isFloat()
+    .withMessage("Maximum longitude is invalid"),
+  check("minLng")
+    .optional()
+    .isFloat()
+    .withMessage("Minimum longitude is invalid"),
+  check("minPrice")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Minimum price must be greater than or equal to 0"),
+  check("maxPrice")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("Maximum price must be greater than or equal to 0"),
   handleValidationErrors,
 ];
 
 //Get all spots
 router.get("/", validateGet, async (req, res) => {
   try {
-    const { page = 1, size = 20, minLat, maxLat, minLng, maxLng, minPrice, maxPrice } = req.query;
+    const {
+      page = 1,
+      size = 20,
+      minLat,
+      maxLat,
+      minLng,
+      maxLng,
+      minPrice,
+      maxPrice,
+    } = req.query;
 
     const filterOps = {
       where: {
@@ -91,14 +124,11 @@ router.get("/", validateGet, async (req, res) => {
         "price",
         "createdAt",
         "updatedAt",
-       /* [
+        /* [
           sequelize.literal('(SELECT AVG(stars) FROM "Reviews" WHERE "Reviews"."spotId" = "Spot"."id")'),
           'avgRating',
         ], */
-        [
-          sequelize.fn("AVG", sequelize.col("Reviews.stars")),
-          "avgRating",
-        ],
+        [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"],
       ],
       include: [
         {
@@ -149,7 +179,6 @@ router.get("/", validateGet, async (req, res) => {
     res.status(500).json({ error: "Something broke bad!" });
   }
 });
-
 
 //Create a spot
 router.post("/", requireAuth, validateSpot, async (req, res, next) => {
@@ -210,10 +239,7 @@ router.get("/current", requireAuth, async (req, res) => {
       "price",
       "createdAt",
       "updatedAt",
-      [
-        sequelize.fn("AVG", sequelize.col("Reviews.stars")),
-        "avgRating",
-      ],
+      [sequelize.fn("AVG", sequelize.col("Reviews.stars")), "avgRating"],
     ],
     include: [
       {
@@ -229,7 +255,7 @@ router.get("/current", requireAuth, async (req, res) => {
         required: false,
       },
     ],
-    group: ["Spot.id", 'SpotImages.id'],
+    group: ["Spot.id", "SpotImages.id"],
   });
 
   const prettiedResponse = {
@@ -435,7 +461,7 @@ router.post(
       const responseObj = {
         message: "User already has a review for this spot",
       };
-      return res.json(responseObj);
+      return responseObj;
     }
 
     const newReview = await Review.create({
@@ -444,7 +470,7 @@ router.post(
       ...req.body,
     });
 
-    return res.json(newReview);
+    return res.status(201).json(newReview);
   }
 );
 
@@ -508,7 +534,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
   if (startDate.getTime() === endDate.getTime()) {
     errArr.push({
       field: "endDate",
-      message: "endDate cannot be the same as startDate",
+      message: "endDate cannot be on or before startDate",
     });
   }
 
@@ -550,7 +576,11 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
   if (existingBooking) {
     res.status(403);
     const responseObj = {
-      message: "Booking already exists for the specified dates",
+      message: "Sorry, this spot is already booked for the specified dates",
+      errors: {
+        startDate: "Start date conflicts with an existing booking",
+        endDate: "End date conflicts with an existing booking",
+      },
     };
     return res.json(responseObj);
   }
