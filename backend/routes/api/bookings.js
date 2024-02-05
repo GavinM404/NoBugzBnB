@@ -311,6 +311,7 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
   const conflictingBooking = await Booking.findOne({
     where: {
       spotId: booking.spotId,
+      id: { [Op.not]: bookingId },
       [Op.or]: [
         // Existing booking entirely encapsulates new booking
         {
