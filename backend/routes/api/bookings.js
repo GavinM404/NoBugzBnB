@@ -300,8 +300,15 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
     return;
   }
 
+  const existingBooking = await Booking.findOne({
+    where: {
+      spotId: booking.spotId,
+      id: { [Op.not]: bookingId },
+    },
+  });
+
   // Check for conflicting bookings
-  const conflictingBooking = await Booking.findAll({
+  const conflictingBooking = await Booking.findOne({
     where: {
       spotId: booking.spotId,
       [Op.and]: [
@@ -339,11 +346,13 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
         // New booking starts inside existing booking
         {
           startDate: { [Op.gte]: existingBooking.startDate },
-          endDate: { [Op.lte]: existingBooking.endDate },
+          startDate: { [Op.lte]: existingBooking.endDate },
+          endDate: { [Op.gte]: existingBooking.endDate },
         },
         // New booking ends inside existing booking
         {
-          startDate: { [Op.lte]: existingBooking.startDate },
+          startDate: { [Op.gte]: existingBooking.startDate },
+          startDate: { [Op.lte]: existingBooking.endDate },
           endDate: { [Op.gte]: endDate },
         },
         {
@@ -354,14 +363,24 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
   });
 
   if (conflictingBooking) {
-    res.status(403).json({
-      message: "Sorry, this spot is already booked for the specified dates",
-      errors: {
-        startDate: "Start date conflicts with an existing booking",
-        endDate: "End date conflicts with an existing booking",
-      },
+    errArr.push({
+      field: "startDate",
+      message: "Start date conflicts with an existing booking",
     });
-    return;
+    errArr.push({
+      field: "endDate",
+      message: "End date conflicts with an existing booking",
+    });
+    if (errArr.length > 0) {
+      res.status(403).json({
+        message: "Sorry, this spot is already booked for the specified dates",
+        errors: errArr.reduce(
+          (acc, cur) => ({ ...acc, [cur.field]: cur.message }),
+          {}
+        ),
+      });
+      return;
+    }
   }
 
 
