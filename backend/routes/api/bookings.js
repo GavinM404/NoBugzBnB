@@ -134,7 +134,7 @@ if (booking.userId !== parseInt(userId, 10)) {
     return;
   }
 
-  const conflictingBooking = await Booking.findOne({
+/*  const conflictingBooking = await Booking.findOne({
     where: {
       spotId: booking.spotId,
       [Op.and]: [
@@ -161,6 +161,7 @@ if (booking.userId !== parseInt(userId, 10)) {
     },
   });
 
+
   if (conflictingBooking) {
     if (conflictingBooking.startDate <= startDate) {
       errArr.push({
@@ -170,6 +171,50 @@ if (booking.userId !== parseInt(userId, 10)) {
     }
 
     if (conflictingBooking.endDate >= endDate) {
+      errArr.push({
+        field: "endDate",
+        message: "End date conflicts with an existing booking",
+      });
+    }
+
+    if (errArr.length > 0) {
+      res.status(403).json({
+        message: "Sorry, this spot is already booked for the specified dates",
+        errors: errArr.reduce(
+          (acc, cur) => ({ ...acc, [cur.field]: cur.message }),
+          {}
+        ),
+      });
+      return;
+    }
+  }
+  */
+  const existingBooking = await Booking.findOne({
+    where: {
+      spotId: spotId,
+      [Op.or]: [
+        {
+          startDate: {
+            [Op.lt]: endDate,
+          },
+          endDate: {
+            [Op.gt]: startDate,
+          },
+        },
+      ],
+    },
+  });
+
+  if (existingBooking) {
+    if (existingBooking.endDate >= startDate) {
+      errArr.push({
+        field: "startDate",
+        message: "Start date conflicts with an existing booking",
+      });
+    }
+
+    // Check if the new end date is on or after the existing booking's start date
+    if (existingBooking.startDate <= endDate) {
       errArr.push({
         field: "endDate",
         message: "End date conflicts with an existing booking",
