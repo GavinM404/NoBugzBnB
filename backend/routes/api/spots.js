@@ -497,9 +497,26 @@ router.get("/:spotId/bookings", requireAuth, async (req, res, next) => {
       ],
     });
 
-    return res.json({ Bookings: bookings });
+    const prettiedResponse = {
+      Bookings: bookings.map((booking) => ({
+        User: {
+          id: booking.User.id,
+          firstName: booking.User.firstName,
+          lastName: booking.User.lastName,
+        },
+        id: booking.id,
+        spotId: booking.spotId,
+        userId: booking.userId,
+        startDate: booking.startDate.toISOString().split("T")[0],
+        endDate: booking.endDate.toISOString().split("T")[0],
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+      })),
+    };
+
+    return res.json(prettiedResponse);
   } else {
-    const bookings = await Booking.findAll({
+    bookings = await Booking.findAll({
       where: {
         spotId: spotId,
         [Op.and]: [
@@ -507,6 +524,7 @@ router.get("/:spotId/bookings", requireAuth, async (req, res, next) => {
           { endDate: { [Op.gte]: new Date() } },
         ],
       },
+      attributes: ["spotId", "startDate", "endDate"],
     });
 
     return res.json({ Bookings: bookings });
@@ -574,16 +592,31 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
   });
 
   if (existingBooking) {
-    res.status(403);
-    const responseObj = {
+    if (existingBooking.startDate <= startDate) {
+      errArr.push({
+        field: "startDate",
+        message: "Start date conflicts with an existing booking",
+      });
+    }
+
+    if (existingBooking.endDate >= endDate) {
+      errArr.push({
+        field: "endDate",
+        message: "End date conflicts with an existing booking",
+      });
+    }
+
+  if (errArr.length > 0) {
+    res.status(403).json({
       message: "Sorry, this spot is already booked for the specified dates",
-      errors: {
-        startDate: "Start date conflicts with an existing booking",
-        endDate: "End date conflicts with an existing booking",
-      },
-    };
-    return res.json(responseObj);
+      errors: errArr.reduce(
+        (acc, cur) => ({ ...acc, [cur.field]: cur.message }),
+        {}
+      ),
+    });
+    return;
   }
+}
 
   const spot = await Spot.findByPk(spotId);
 

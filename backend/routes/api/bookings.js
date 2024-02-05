@@ -134,36 +134,58 @@ if (booking.userId !== parseInt(userId, 10)) {
     return;
   }
 
-  const bookingExists = await Booking.findOne({
+  const conflictingBooking = await Booking.findOne({
     where: {
       spotId: booking.spotId,
-      [Op.or]: [
+      [Op.and]: [
         {
-          startDate: {
-            [Op.between]: [startDate, endDate],
-          },
+          [Op.or]: [
+            {
+              startDate: {
+                [Op.between]: [startDate, endDate],
+              },
+            },
+            {
+              endDate: {
+                [Op.between]: [startDate, endDate],
+              },
+            },
+          ],
         },
         {
-          endDate: {
-            [Op.between]: [startDate, endDate],
+          id: {
+            [Op.not]: bookingId,
           },
         },
       ],
-      id: {
-        [Op.not]: bookingId,
-      },
     },
   });
 
-  if (bookingExists) {
-    res.status(403);
-    return res.json({
-      message: "Sorry, this spot is already booked for the specified dates",
-      errors: {
-        startDate: "Start date conflicts with an existing booking",
-        endDate: "End date conflicts with an existing booking",
-      },
-    });
+  if (conflictingBooking) {
+    if (conflictingBooking.startDate <= startDate) {
+      errArr.push({
+        field: "startDate",
+        message: "Start date conflicts with an existing booking",
+      });
+    }
+
+    if (conflictingBooking.endDate >= endDate) {
+      errArr.push({
+        field: "endDate",
+        message: "End date conflicts with an existing booking",
+      });
+    }
+
+    if (errArr.length > 0) {
+      res.status(403).json({
+        message: "Sorry, this spot is already booked for the specified dates",
+        errors: errArr.reduce(
+          (acc, cur) => ({ ...acc, [cur.field]: cur.message }),
+          {}
+        ),
+      });
+      return;
+    }
   }
 
   await booking.update({
