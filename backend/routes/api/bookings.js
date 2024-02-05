@@ -301,72 +301,53 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
   }
 
   // Check for conflicting bookings
-  const conflictingBooking = await Booking.findOne({
+  const conflictingBooking = await Booking.findAll({
     where: {
       spotId: booking.spotId,
       [Op.and]: [
+        // Existing booking entirely encapsulates new booking
         {
-          [Op.and]: [
-            { startDate: { [Op.gte]: startDate } },
-            { endDate: { [Op.lte]: endDate } },
-          ],
+          startDate: { [Op.gte]: startDate },
+          endDate: { [Op.lte]: endDate },
         },
         // New booking entirely encapsulates existing booking
         {
-          [Op.and]: [
-            { startDate: { [Op.lte]: startDate } },
-            { endDate: { [Op.gte]: endDate } },
-          ],
+          startDate: { [Op.lte]: startDate },
+          endDate: { [Op.gte]: endDate },
         },
         // Existing booking starts inside new booking
         {
-          [Op.and]: [
-            { startDate: { [Op.gte]: startDate } },
-            { startDate: { [Op.lte]: endDate } },
-            { endDate: { [Op.gte]: endDate } },
-          ],
+          startDate: { [Op.gte]: startDate },
+          startDate: { [Op.lte]: endDate },
+          endDate: { [Op.gte]: endDate },
         },
         // Existing booking starts and ends within the range of new booking
         {
-          [Op.and]: [
-            { startDate: { [Op.gte]: startDate } },
-            { endDate: { [Op.lte]: endDate } },
-          ],
+          startDate: { [Op.gte]: startDate },
+          endDate: { [Op.lte]: endDate },
         },
         // Existing booking overlaps with new booking's start
         {
-          [Op.and]: [
-            { startDate: { [Op.lte]: startDate } },
-            { endDate: { [Op.gte]: startDate } },
-          ],
+          startDate: { [Op.lte]: startDate },
+          endDate: { [Op.gte]: startDate },
         },
         // Existing booking overlaps with new booking's end
         {
-          [Op.and]: [
-            { startDate: { [Op.lte]: endDate } },
-            { endDate: { [Op.gte]: endDate } },
-          ],
+          startDate: { [Op.lte]: endDate },
+          endDate: { [Op.gte]: endDate },
         },
         // New booking starts inside existing booking
         {
-          [Op.and]: [
-            { startDate: { [Op.gte]: existingBooking.startDate } },
-            { startDate: { [Op.lte]: existingBooking.endDate } },
-            { endDate: { [Op.gte]: existingBooking.endDate } },
-          ],
+          startDate: { [Op.gte]: existingBooking.startDate },
+          endDate: { [Op.lte]: existingBooking.endDate },
         },
         // New booking ends inside existing booking
         {
-          [Op.and]: [
-            { startDate: { [Op.gte]: existingBooking.startDate } },
-            { startDate: { [Op.lte]: existingBooking.endDate } },
-            { endDate: { [Op.gte]: endDate } },
-          ],
+          startDate: { [Op.lte]: existingBooking.startDate },
+          endDate: { [Op.gte]: endDate },
         },
         {
-          id: {
-            [Op.not]: bookingId,
-          },
+          id: { [Op.not]: bookingId },
         },
       ],
     },
