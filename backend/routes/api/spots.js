@@ -566,7 +566,7 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
     });
     return;
   }
-
+/*
   const existingBooking = await Booking.findOne({
     where: {
       spotId: spotId,
@@ -586,6 +586,23 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
             { startDate: { [Op.lte]: startDate } },
             { endDate: { [Op.gte]: endDate } },
           ],
+        },
+      ],
+    },
+  });
+  */
+
+  const existingBooking = await Booking.findOne({
+    where: {
+      spotId: spotId,
+      [Op.or]: [
+        {
+          startDate: {
+            [Op.lt]: endDate,
+          },
+          endDate: {
+            [Op.gt]: startDate,
+          },
         },
       ],
     },
