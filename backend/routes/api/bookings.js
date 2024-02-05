@@ -306,13 +306,61 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
       spotId: booking.spotId,
       [Op.and]: [
         {
-          [Op.or]: [
-            {
-              startDate: { [Op.between]: [startDate, endDate] },
-            },
-            {
-              endDate: { [Op.between]: [startDate, endDate] },
-            },
+          [Op.and]: [
+            { startDate: { [Op.gte]: startDate } },
+            { endDate: { [Op.lte]: endDate } },
+          ],
+        },
+        // New booking entirely encapsulates existing booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.lte]: startDate } },
+            { endDate: { [Op.gte]: endDate } },
+          ],
+        },
+        // Existing booking starts inside new booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.gte]: startDate } },
+            { startDate: { [Op.lte]: endDate } },
+            { endDate: { [Op.gte]: endDate } },
+          ],
+        },
+        // Existing booking starts and ends within the range of new booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.gte]: startDate } },
+            { endDate: { [Op.lte]: endDate } },
+          ],
+        },
+        // Existing booking overlaps with new booking's start
+        {
+          [Op.and]: [
+            { startDate: { [Op.lte]: startDate } },
+            { endDate: { [Op.gte]: startDate } },
+          ],
+        },
+        // Existing booking overlaps with new booking's end
+        {
+          [Op.and]: [
+            { startDate: { [Op.lte]: endDate } },
+            { endDate: { [Op.gte]: endDate } },
+          ],
+        },
+        // New booking starts inside existing booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.gte]: existingBooking.startDate } },
+            { startDate: { [Op.lte]: existingBooking.endDate } },
+            { endDate: { [Op.gte]: existingBooking.endDate } },
+          ],
+        },
+        // New booking ends inside existing booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.gte]: existingBooking.startDate } },
+            { startDate: { [Op.lte]: existingBooking.endDate } },
+            { endDate: { [Op.gte]: endDate } },
           ],
         },
         {
