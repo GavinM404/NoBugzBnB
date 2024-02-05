@@ -383,6 +383,16 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
         message: "End date conflicts with an existing booking",
       });
     }
+    if (errArr.length > 0) {
+      res.status(403).json({
+        message: "Sorry, this spot is already booked for the specified dates",
+        errors: errArr.reduce(
+          (acc, cur) => ({ ...acc, [cur.field]: cur.message }),
+          {}
+        ),
+      });
+      return;
+    }
   }
 
 
