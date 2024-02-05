@@ -133,7 +133,7 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
     return;
   }
 
-  const conflictingBooking = await Booking.findOne({
+  const conflictingBooking = await Booking.findAll({
     where: {
       spotId: booking.spotId,
       [Op.and]: [
@@ -215,6 +215,15 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
       }
 
       if (conflictingBooking.endDate >= endDate) {
+        errArr.push({
+          field: "endDate",
+          message: "End date conflicts with an existing booking",
+        });
+      } else {
+        errArr.push({
+          field: "startDate",
+          message: "Start date conflicts with an existing booking",
+        });
         errArr.push({
           field: "endDate",
           message: "End date conflicts with an existing booking",
