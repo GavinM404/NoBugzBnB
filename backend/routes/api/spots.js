@@ -461,7 +461,7 @@ router.post(
       const responseObj = {
         message: "User already has a review for this spot",
       };
-      return responseObj;
+      return res.json(responseObj);
     }
 
     const newReview = await Review.create({
