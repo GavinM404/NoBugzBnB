@@ -139,15 +139,48 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
       [Op.and]: [
         {
           [Op.or]: [
+            // Existing booking entirely encapsulates new booking
             {
-              startDate: {
-                [Op.between]: [startDate, endDate],
-              },
+              [Op.and]: [
+                { startDate: { [Op.gte]: startDate } },
+                { endDate: { [Op.lte]: endDate } },
+              ],
             },
+            // New booking entirely encapsulates existing booking
             {
-              endDate: {
-                [Op.between]: [startDate, endDate],
-              },
+              [Op.and]: [
+                { startDate: { [Op.lte]: startDate } },
+                { endDate: { [Op.gte]: endDate } },
+              ],
+            },
+            // Existing booking starts inside new booking
+            {
+              [Op.and]: [
+                { startDate: { [Op.gte]: startDate } },
+                { startDate: { [Op.lte]: endDate } },
+                { endDate: { [Op.gte]: endDate } },
+              ],
+            },
+            // Existing booking starts and ends within the range of new booking
+            {
+              [Op.and]: [
+                { startDate: { [Op.gte]: startDate } },
+                { endDate: { [Op.lte]: endDate } },
+              ],
+            },
+            // Existing booking overlaps with new booking's start
+            {
+              [Op.and]: [
+                { startDate: { [Op.lte]: startDate } },
+                { endDate: { [Op.gte]: startDate } },
+              ],
+            },
+            // Existing booking overlaps with new booking's end
+            {
+              [Op.and]: [
+                { startDate: { [Op.lte]: endDate } },
+                { endDate: { [Op.gte]: endDate } },
+              ],
             },
           ],
         },
@@ -200,6 +233,7 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
       return;
     }
   }
+
 
   await booking.update({
     startDate: startDate,

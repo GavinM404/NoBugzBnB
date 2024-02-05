@@ -569,28 +569,52 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
 
   const conflictingBooking = await Booking.findOne({
     where: {
-      spotId: booking.spotId,
+      spotId: spotId,
       [Op.or]: [
+        // Existing booking entirely encapsulates new booking
         {
-          startDate: {
-            [Op.between]: [startDate, endDate],
-          },
+          [Op.and]: [
+            { startDate: { [Op.gte]: startDate } },
+            { endDate: { [Op.lte]: endDate } },
+          ],
         },
-        {
-          endDate: {
-            [Op.between]: [startDate, endDate],
-          },
-        },
+        // New booking entirely encapsulates existing booking
         {
           [Op.and]: [
             { startDate: { [Op.lte]: startDate } },
             { endDate: { [Op.gte]: endDate } },
           ],
         },
+        // Existing booking starts inside new booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.gte]: startDate } },
+            { startDate: { [Op.lte]: endDate } },
+            { endDate: { [Op.gte]: endDate } },
+          ],
+        },
+        // Existing booking starts and ends within the range of new booking
+        {
+          [Op.and]: [
+            { startDate: { [Op.gte]: startDate } },
+            { endDate: { [Op.lte]: endDate } },
+          ],
+        },
+        // Existing booking overlaps with new booking's start
+        {
+          [Op.and]: [
+            { startDate: { [Op.lte]: startDate } },
+            { endDate: { [Op.gte]: startDate } },
+          ],
+        },
+        // Existing booking overlaps with new booking's end
+        {
+          [Op.and]: [
+            { startDate: { [Op.lte]: endDate } },
+            { endDate: { [Op.gte]: endDate } },
+          ],
+        },
       ],
-      id: {
-        [Op.not]: bookingId,
-      },
     },
   });
 
@@ -613,6 +637,15 @@ router.post("/:spotId/bookings", requireAuth, async (req, res, next) => {
       }
 
       if (conflictingBooking.endDate >= endDate) {
+        errArr.push({
+          field: "endDate",
+          message: "End date conflicts with an existing booking",
+        });
+      } else {
+        errArr.push({
+          field: "startDate",
+          message: "Start date conflicts with an existing booking",
+        });
         errArr.push({
           field: "endDate",
           message: "End date conflicts with an existing booking",
