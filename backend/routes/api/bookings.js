@@ -311,16 +311,16 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
   const conflictingBooking = await Booking.findOne({
     where: {
       spotId: booking.spotId,
-      [Op.and]: [
+      [Op.or]: [
         // Existing booking entirely encapsulates new booking
-        {
-          startDate: { [Op.gte]: startDate },
-          endDate: { [Op.lte]: endDate },
-        },
-        // New booking entirely encapsulates existing booking
         {
           startDate: { [Op.lte]: startDate },
           endDate: { [Op.gte]: endDate },
+        },
+        // New booking entirely encapsulates existing booking
+        {
+          startDate: { [Op.gte]: startDate },
+          endDate: { [Op.lte]: endDate },
         },
         // Existing booking starts inside new booking
         {
@@ -342,21 +342,6 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
         {
           startDate: { [Op.lte]: endDate },
           endDate: { [Op.gte]: endDate },
-        },
-        // New booking starts inside existing booking
-        {
-          startDate: { [Op.gte]: existingBooking.startDate },
-          startDate: { [Op.lte]: existingBooking.endDate },
-          endDate: { [Op.gte]: existingBooking.endDate },
-        },
-        // New booking ends inside existing booking
-        {
-          startDate: { [Op.gte]: existingBooking.startDate },
-          startDate: { [Op.lte]: existingBooking.endDate },
-          endDate: { [Op.gte]: endDate },
-        },
-        {
-          id: { [Op.not]: bookingId },
         },
       ],
     },
@@ -380,6 +365,23 @@ router.put("/:bookingId", requireAuth, async (req, res, next) => {
         ),
       });
       return;
+    }
+  }
+
+  if (existingBooking) {
+    // Check if the new booking entirely encapsulates an existing booking
+    if (
+      startDate <= existingBooking.startDate &&
+      endDate >= existingBooking.endDate
+    ) {
+      errArr.push({
+        field: "startDate",
+        message: "Start date conflicts with an existing booking",
+      });
+      errArr.push({
+        field: "endDate",
+        message: "End date conflicts with an existing booking",
+      });
     }
   }
 
